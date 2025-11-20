@@ -1,3 +1,21 @@
+Preguntas de negocio 
+
+¿Cuáles fueron los períodos de mayor crecimiento y de mayor caída del índice?
+
+¿Qué tan conveniente es comprar o vender una acción en un momento determinado?
+
+¿De qué manera las tendencias de los commodities afectan el desempeño de las empresas?
+
+¿Cómo se comporta el índice general y qué patrones indican tendencia alcista o bajista?
+
+¿Qué impacto tuvo la volatilidad asociada a eventos de crisis (pandemia, guerras, recesiones, etc.)?
+
+¿Qué empresas reportaron crecimiento sostenido durante un período específico?
+
+¿Cuáles fueron las empresas con mayor crecimiento en los últimos X años?
+
+Proceso basico 
+
 1. Ingesta (Raw)
 
 - Fuente: datasets Kaggle
@@ -47,3 +65,4 @@
 6. Orquestación
 
 - Airflow(ingesta,curado, dbt, outputs)
+

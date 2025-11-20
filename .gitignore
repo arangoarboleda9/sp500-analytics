@@ -2,6 +2,7 @@ data/*
 .env
 __pycache__/
 dbt/target/
+datasets_kaggle/
 
 __pycache__/
 *.pyc

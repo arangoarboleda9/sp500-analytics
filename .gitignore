@@ -4,27 +4,35 @@ __pycache__/
 dbt/target/
 datasets_kaggle/
 
-__pycache__/
+# Python cache
 *.pyc
 *.pyo
 *.pyd
 
-#airflow.cfg
+# Airflow
 airflow/logs/
 airflow/logs/*
 airflow/plugins/__pycache__/
 
-# desarrollo local
+# Desarrollo local
 postgres/data/
 minio/data/
 **/data/
 
-#  VSCode
+# VSCode
 .vscode/
 
-# private
+# Private keys
 *.pem
 *.key
 *.crt
 *.creds
 *.json
+
+# Terraform
+infra/terraform/.terraform/
+infra/terraform/.terraform/*
+infra/terraform/.terraform.lock.hcl
+infra/terraform/terraform.tfvars
+infra/terraform/terraform.tfstate
+infra/terraform/terraform.tfstate.backup

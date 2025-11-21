@@ -49,13 +49,3 @@ variable "ami_id" {
   type        = string
   default     = "ami-0c02fb55956c7d316"
 }
-
-resource "aws_s3_bucket" "data_lake" {
-  bucket = "${var.s3_bucket_name}-${var.env}"
-
-  tags = {
-    Project = "sp500-analytics"
-    Env     = var.env
-    Owner   = var.owner_tag
-  }
-}

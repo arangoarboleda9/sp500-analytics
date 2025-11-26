@@ -2,40 +2,42 @@ import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 import os
-import numpy as np 
+import numpy as np
 import boto3
 # Importar BytesIO, el buffer correcto para formatos binarios como Parquet
-from io import BytesIO 
+from io import BytesIO
+from config import Config
+import config
 
 # -----------------------------------------------------
-# ⚠️ CONFIGURACIÓN DE CREDENCIALES AWS y DESTINO S3 ⚠️
+# ⚙️ CONFIGURACIÓN DE CREDENCIALES AWS y DESTINO S3
 # -----------------------------------------------------
-# Credenciales de Acceso AWS (INYECCIÓN MANUAL)
-AWS_ACCESS_KEY_ID = "" 
-AWS_SECRET_ACCESS_KEY = ""
-AWS_REGION = "us-east-1" # Región de tu bucket
-SILVER_BUCKET_NAME = "henry-sp500-dataset"  # Nombre del bucket verificado
-S3_KEY_PATH = "silver/sp500_index/sp500_index_silver.parquet" # Ruta final del archivo en S3
+
+load_dotenv()
+
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID") 
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_REGION = config.AWS_DEFAULT_REGION
+SILVER_BUCKET_NAME = config.S3_BUCKET 
+S3_KEY_PATH = "silver/sp500_index/sp500_index_silver.parquet"
 
 # -----------------------------------------------------
-# CONFIGURACIÓN DE RDS Y TABLAS
+# 🗄️ CONFIGURACIÓN DE RDS Y TABLAS (Usando la clase Config)
 # -----------------------------------------------------
-load_dotenv() # Cargar variables de entorno
-
-# Credenciales de RDS (Se asume que están en .env)
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST") 
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
+# Credenciales de RDS (Usando la clase Config)
+DB_USER = config.AWS_DB_USER
+DB_PASSWORD = config.AWS_DB_PASSWORD
+DB_HOST = config.AWS_DB_HOST
+DB_PORT = config.AWS_DB_PORT
+DB_NAME = config.AWS_DB_NAME
 
 # Nombres de las tablas
 RAW_TABLE_NAME = "company_index"
-SILVER_TABLE_NAME = "sp500_index_silver" 
+SILVER_TABLE_NAME = "sp500_index_silver"
 
 # -----------------------------------------------------
 # Conectar a RDS PostgreSQL
-# -----------------------------------------------------
+
 db_url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 engine = create_engine(db_url)
 
@@ -85,7 +87,7 @@ df_silver.dropna(subset=['date', 'sp500_index'], inplace=True)
 final_columns = [
     'date',
     'sp500_index',
-    'dividend', 
+    'dividend',
     'earnings'
 ]
 df_silver = df_silver[[col for col in final_columns if col in df_silver.columns]]
@@ -104,21 +106,22 @@ try:
     s3_client = boto3.client(
         's3',
         region_name=AWS_REGION,
+        # Ahora se cargan del entorno y NO están hardcodeadas en el código
         aws_access_key_id=AWS_ACCESS_KEY_ID,
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY
     )
 
     # 2. Convertir DataFrame a Parquet usando BytesIO
-    parquet_buffer = BytesIO() 
+    parquet_buffer = BytesIO()
     df_silver.to_parquet(parquet_buffer, index=False)
-    
-    parquet_buffer.seek(0) 
-    
+
+    parquet_buffer.seek(0)
+
     # 3. Subir el archivo binario a S3
     s3_client.put_object(
         Bucket=SILVER_BUCKET_NAME,
         Key=S3_KEY_PATH,
-        Body=parquet_buffer.read() 
+        Body=parquet_buffer.read()
     )
 
     print(f"✔ Carga en S3 exitosa: s3://{SILVER_BUCKET_NAME}/{S3_KEY_PATH}")

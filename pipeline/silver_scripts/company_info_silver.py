@@ -5,35 +5,38 @@ import os
 import numpy as np
 import boto3
 from io import BytesIO
+from config import Config
+import config
+
+# Cargar variables de entorno
+load_dotenv()
 
 # -----------------------------------------------------
 # ⚠️ CONFIGURACIÓN DE CREDENCIALES AWS y DESTINO S3 ⚠️
 # -----------------------------------------------------
-# Credenciales de Acceso AWS (INYECCIÓN MANUAL)
-AWS_ACCESS_KEY_ID = ""
-AWS_SECRET_ACCESS_KEY = ""
+
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID") 
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY") # ✅ CORREGIDO
+
 AWS_REGION = "us-east-1"
 SILVER_BUCKET_NAME = "henry-sp500-dataset"
-# NOTA: La clave S3 sigue apuntando a la tabla principal (Hechos)
 S3_KEY_PATH = "silver/company_info/company_info_silver.parquet"
 
 # -----------------------------------------------------
 # CONFIGURACIÓN DE RDS Y TABLAS
 # -----------------------------------------------------
-load_dotenv()
-
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
-
+# Credenciales de RDS (Se mantienen correctas, cargadas desde el entorno)
+DB_USER = config.AWS_DB_USER
+DB_PASSWORD = config.AWS_DB_PASSWORD
+DB_HOST = config.AWS_DB_HOST
+DB_PORT = config.AWS_DB_PORT
+DB_NAME = config.AWS_DB_NAME
 # Nombres de las tablas
 RAW_TABLE_NAME = "company_info"
-FACT_TABLE_NAME = "fact_company_info" # Nuevo nombre para la tabla de hechos
+FACT_TABLE_NAME = "fact_company_info"
 DIM_SECTOR_NAME = "dim_sector"
 DIM_INDUSTRY_NAME = "dim_industry"
-DIM_LOCATION_NAME = "dim_location" # Unificando City, State, Country
+DIM_LOCATION_NAME = "dim_location"
 DIM_EXCHANGE_NAME = "dim_exchange"
 
 # -----------------------------------------------------
@@ -174,7 +177,8 @@ try:
     s3_client = boto3.client(
         's3',
         region_name=AWS_REGION,
-        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        # Estas credenciales ahora vienen de os.getenv(), fuera del código
+        aws_access_key_id=AWS_ACCESS_KEY_ID, 
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY
     )
 

@@ -5,15 +5,16 @@ import os
 import numpy as np 
 import boto3
 from io import BytesIO 
+from config import Config
+import config
 
 # -----------------------------------------------------
 # ⚠️ CONFIGURACIÓN DE CREDENCIALES AWS y DESTINO S3 ⚠️
 # -----------------------------------------------------
-AWS_ACCESS_KEY_ID = "" 
-AWS_SECRET_ACCESS_KEY = ""
-AWS_REGION = "us-east-1" 
-SILVER_BUCKET_NAME = "henry-sp500-dataset"  
-# RUTA S3 - Nombre de la tabla de Hechos
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID") 
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_REGION = config.AWS_DEFAULT_REGION         
+SILVER_BUCKET_NAME = config.S3_BUCKET    
 S3_KEY_PATH = "silver/company_historical_stocks/fact_historical_stocks.parquet" 
 
 # -----------------------------------------------------
@@ -21,14 +22,15 @@ S3_KEY_PATH = "silver/company_historical_stocks/fact_historical_stocks.parquet"
 # -----------------------------------------------------
 load_dotenv() 
 
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST") 
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
+
+DB_USER = config.AWS_DB_USER
+DB_PASSWORD = config.AWS_DB_PASSWORD
+DB_HOST = config.AWS_DB_HOST
+DB_PORT = config.AWS_DB_PORT
+DB_NAME = config.AWS_DB_NAME
 
 # --- VERIFICACIÓN DE ERROR DE ENTORNO (DB_PORT 'None') ---
-if DB_PORT is None or not DB_PORT.isdigit():
+if DB_PORT is None or not str(DB_PORT).isdigit(): 
     print("❌ ERROR: La variable DB_PORT no se cargó correctamente o no es un número.")
     print("Asegúrate de que tu archivo .env existe y contiene DB_PORT=\"5432\" (o el puerto correcto).")
     exit()

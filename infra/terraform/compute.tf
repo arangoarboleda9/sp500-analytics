@@ -48,9 +48,22 @@ resource "aws_instance" "etl_server" {
     # Levantamos el contenedor (ajustá puertos/variables si hace falta)
     sudo docker run -d \
       --name sp500-etl \
+      --restart unless-stopped \
       -p 8080:8080 \
+      -e AIRFLOW__CORE__LOAD_EXAMPLES=False \
       ${var.dockerhub_username}/sp500-etl:latest
 
     echo "=== user_data de sp500-etl finalizado ==="
   EOF
+}
+
+resource "aws_eip" "etl_ip" {
+  instance = aws_instance.etl_server.id
+  vpc      = true
+
+  tags = {
+    Name    = "sp500-etl-ip-${var.env}"
+    Project = "sp500-analytics"
+    Env     = var.env
+  }
 }

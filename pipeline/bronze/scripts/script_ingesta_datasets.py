@@ -8,15 +8,13 @@ Ejecutable en Airflow desde main()
 """
 
 import os
-# from dotenv import load_dotenv
 import kagglehub
 import boto3
 from botocore.exceptions import NoCredentialsError
 from config import Config
 
-# load_dotenv()
 
-S3_PREFIX = "datasets-kaggle/"
+S3_PREFIX = Config.S3_PREFIX
 DATASETS = [
     "vaghefi/company-reviews",
     "andrewmvd/sp-500-stocks",

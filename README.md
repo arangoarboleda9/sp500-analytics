@@ -59,7 +59,8 @@ sp500-analytics/
 │   └── pipeline_diagrama.png
 ├── scripts/
 ├── notebook/               
-├── infra/ # config de servicios y docker
+├── infra/ # Infraestructura (Terraform, Docker, configuración de servicios)
+    └── terraform/ # Infraestructura como código (IaC) en AWS
 ├── dashboard/ # tablero
 ├── tests/
 ├── .gitignore

@@ -55,6 +55,18 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
 
+    env:
+      AWS_DB_USER: ${{ vars.AWS_DB_USER }}
+      AWS_DB_PASSWORD: ${{ vars.AWS_DB_PASSWORD }}
+      AWS_DB_HOST: ${{ vars.AWS_DB_HOST }}
+      AWS_DB_PORT: ${{ vars.AWS_DB_PORT }}
+      AWS_DB_NAME: ${{ vars.AWS_DB_NAME }}
+      AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ vars.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+      S3_BUCKET: ${{ vars.S3_BUCKET }}
+      # API_BASE_URL: ${{ vars.API_BASE_URL }}
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -68,7 +80,7 @@ jobs:
 
       - name: Deploy latest image on EC2
         run: |
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             set -e
             # Carpeta base de la app en la EC2
             sudo mkdir -p /opt/sp500
@@ -88,9 +100,19 @@ jobs:
               sudo docker rm sp500-etl || true
             fi
 
-            # Levantar contenedor nuevo
+
             sudo docker run -d \
               --name sp500-etl \
               -p 8080:8080 \
+              -e AWS_DB_USER=${AWS_DB_USER} \
+              -e AWS_DB_PASSWORD=${AWS_DB_PASSWORD} \
+              -e AWS_DB_HOST=${AWS_DB_HOST} \
+              -e AWS_DB_PORT=${AWS_DB_PORT} \
+              -e AWS_DB_NAME=${AWS_DB_NAME} \
+              -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+              -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+              -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
+              -e S3_BUCKET=${S3_BUCKET} \
+              -e ENVIRONMENT=prod \
               ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
           EOF

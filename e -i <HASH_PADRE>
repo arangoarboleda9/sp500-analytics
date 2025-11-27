@@ -1,0 +1,22 @@
+[33m33f19a2[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m)[m feat(pipeline): Agrega la carpeta 'silver_scripts' con nuevos scripts.
+[33m27b7764[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge pull request #8 from LucianaCHA/feature/bronze_intgegration
+[33m8e0b1e1[m[33m ([m[1;31morigin/feature/bronze_intgegration[m[33m)[m Merge branch 'main' into feature/bronze_intgegration
+[33m404cd5f[m add ingestion dags, updated readme, requirements
+[33m1297ef5[m Merge pull request #6 from LucianaCHA/feature/infra_terraform_pipeline
+[33m3902e9b[m GitHub Actions para Terraform (CI/CD Infra)
+[33m6a1ba79[m Merge pull request #5 from LucianaCHA/feature/terraform_s3_datalake_setup
+[33m20a1f2e[m[33m ([m[1;31morigin/feature/terraform_s3_datalake_setup[m[33m)[m Implementación de Infraestructura como Código (IaC) con Terraform
+[33m4e3d545[m Add S3 data lake bucket with versioning and security
+[33m723cc4d[m Resolve .gitignore merge conflict
+[33m0614bae[m[33m ([m[1;31morigin/ingesta[m[33m)[m Merge pull request #3 from LucianaCHA/ingesta
+[33m9268a49[m Merge branch 'main' of https://github.com/LucianaCHA/sp500-analytics into ingesta
+[33m0360d53[m Merge pull request #2 from LucianaCHA/feature/airflow_basic_setup
+[33mc0a165f[m[33m ([m[1;31morigin/feature/airflow_basic_setup[m[33m)[m Merge branch 'main' of https://github.com/LucianaCHA/sp500-analytics into feature/airflow_basic_setup
+[33m18651c5[m Merge pull request #1 from LucianaCHA/feature/update_business_questions
+[33mae8ba87[m Scripts creacion tabla raw
+[33m149fdcc[m feat(terraform): add S3 Data Lake infrastructure (raw/clean/curated + versioning)
+[33m8743388[m Saco el directorio dataset del .gitignore y creo script para subir datasets a S3
+[33m509ee42[m  add Airflow + DBT + MinIO environment setup up
+[33m605f523[m[33m ([m[1;31morigin/feature/update_business_questions[m[33m)[m add bussines questions summarized
+[33m537766b[m Initial commit: repo structure, base README and docs
+[33m5d8939a[m Initial commit

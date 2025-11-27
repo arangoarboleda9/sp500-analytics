@@ -243,7 +243,7 @@ def load_to_rds(engine, df_fact_table: pd.DataFrame, df_dim_industry: pd.DataFra
         print(f"❌ Error al cargar a RDS o al establecer claves: {e}")
 
 
-def run_etl_pipeline():
+def main():
     """Orquesta la ejecución completa del pipeline ETL."""
     
     # 1. Obtener motor de DB
@@ -272,4 +272,4 @@ def run_etl_pipeline():
 
 
 if __name__ == "__main__":
-    run_etl_pipeline()
+    main()

@@ -1,5 +1,19 @@
 # SP500 Analytics Pipeline
 
+## Índice
+- [Objetivo del proyecto](#objetivo-del-proyecto)
+- [Flujo general del pipeline (WIP)](#flujo-general-del-pipeline-wip)
+- [Arquitectura técnica](#arquitectura-técnica)
+- [Arquitectura AWS (WIP)](#arquitectura-aws-wip)
+  - [Servicios](#servicios)
+  - [Infraestructura como Código (Terraform) - WIP](#infraestructura-como-código-terraform---wip)
+- [Estructura general del proyecto](#estructura-general-del-proyecto)
+- [Documentación ampliada](#documentación-ampliada)
+- [Requisitos](#requisitos)
+- [Instalación y uso (versión local de desarrollo)](#instalación-y-uso-versión-local-de-desarrollo)
+  - [1. Variables de entorno (.env)](#1-variables-de-entorno-env)
+  - [2. Levantar el entorno con Docker](#2-levantar-el-entorno-con-docker)
+
 Este proyecto implementa un pipeline de datos completo para la captura, procesamiento, modelado y análisis de indicadores del índice S&P500. Su objetivo es ofrecer datos confiables y accesibles para la investigación financiera, educación en inversiones y análisis de mercado.
 
 ## Objetivo del proyecto
@@ -8,7 +22,7 @@ El propósito del pipeline es obtener datos históricos y actuales del S&P500, p
 
 # Flujo general del pipeline (WIP)
 
-* Ingesta de datos del índice S&P500 desde Kaggle u otra fuente
+* Ingesta de datos del índice S&P500 desde Kaggle
 
 * Almacenamiento sin procesar en la zona raw
 
@@ -24,17 +38,36 @@ El propósito del pipeline es obtener datos históricos y actuales del S&P500, p
 
 El pipeline está basado en una arquitectura modular basada en los pasos del pipeline, para facilitar la escalabilidad y el mantenimiento.
 
-| Componente            | Tecnología                                   |
-| --------------------- | -------------------------------------------- |
-| Orquestación          | Apache Airflow                               |
-| Ingesta               | Kaggle API / Python                          |
-| Almacenamiento bruto  | Amazon S3 (raw zone)                         |
-| Procesamiento         | PySpark / Pandas                             |
-| Almacenamiento curado | S3 (curated zone)                            |
-| Modelado semántico    | DBT                                          |
-| Data Warehouse        | Postgres / DuckDB / Redshift (según entorno) |
-| Visualización         | PowerBI / Superset / Metabase                |
+| Componente             | Tecnología / Servicio                       |
+| ---------------------- | -------------------------------------------- |
+| Orquestación           | Apache Airflow                               |
+| Ingesta                | KaggleHub / Python                           |
+| Data Lake              | S3 o MinIO (Bronze, Silver, Gold)            |
+| Procesamiento          | Pandas / PySpark                             |
+| Data Warehouse         | PostgreSQL (local) / Redshift / DuckDB       |
+| Visualización          | PowerBI / Superset / Metabase                |
 
+## Arquitectura AWS (WIP)
+
+Esta sección describe la infraestructura en entorno cloud.
+
+### Servicios
+
+- Amazon S3  
+  - Zona Bronze: sp500-datatsets  
+  - Zona Silver 
+  - Zona Gold
+
+- Airflow en EC2/ECS  
+  Para orquestar las tareas del pipeline.
+
+- Amazon RDS PostgreSQL  
+  Para la capa silver, analítica y consumo final.
+
+- IAM  
+  Roles, políticas y permisos para S3, Airflow, etc.
+
+### Infraestructura como Código (Terraform) - WIP
 
 
 
@@ -45,26 +78,28 @@ sp500-analytics/
 │ ├── dags/
 │ ├── logs/
 │ └── plugins/
+├── assets/
 ├── data/ # datos locales para desarrollo/test idealmente no sube a git
 │   ├── raw/
 │   ├── clean/
 │   └── curated/
-├── dbt/  # proyecto dbt 
-│   └── models/
-│       ├── staging/
-│       ├── intermediate/
-│       └── marts/
+├── dashboard/ # tablero
+│   └── wip/
 ├── docs/
-│   ├── tecnico.md
-│   ├── arquitectura.png
-│   ├── modelo_datos.png
-│   └── pipeline_diagrama.png
+│   ├── 01_project_requiriments.md
+│   ├── ... documentación del proyecto
 ├── minio/
 │ └── data/
 ├── scripts/
 ├── notebook/               
 ├── infra/ # config de servicios y docker
-├── dashboard/ # tablero
+├── pipeline/ 
+│   ├── bronze/
+│   │       ├── scripts/
+│   │       ├── ...archivos requeridos para el proceso en esta capa
+│   ├── silver/
+│   └── gold/
+│   └── utils       
 ├── tests/
 ├── .gitignore
 ├── README.md
@@ -73,23 +108,19 @@ sp500-analytics/
 ```
 
 ## Documentación ampliada 
-- [`Documento técnico`](docs/tech.md)
+- [`Documento técnico`](docs/04_tech.md)
 
 ## Requisitos
 
 - Python 3.10+
-
 - Docker / Docker Compose
-
-- AWS CLI configurado (cuando se utilice S3 real)
-
 - DBT
-
-- Airflow
+- AWS CLI (si se usa S3 real)
+- Kaggle API configurada
 
 ## Instalación y uso (versión local de desarrollo)
 
-### **1. Variables de entorno (.env)**
+### 1. Variables de entorno (.env)
 
 Todas las configuraciones del entorno local se manejan mediante el archivo `.env` en la raíz.
 
@@ -97,39 +128,17 @@ Ejemplo:
 ```
 AWS_ACCESS_KEY_ID=admin
 ```
-### **2. Instalación – Versión local (dev)***
-
-### Levantar todo el entorno
+## 2. Levantar el entorno con Docker
 
 ```sh
 docker compose -p sp-500 up --build
 ```
-- Esto levanta:
 
-- Airflow Webserver http://localhost:8080
-- Airflow Scheduler
-- Airflow Worker
-- Airflow Triggerer
-- Redis (Broker)
-- Postgres (Data Warehouse)
-- MinIO (Data Lake local)
+Servicios disponibles:
 
-Accesos
-Airflow UI
+| Servicio | URL | Credenciales |
+|---------|-----|--------------|
+| Airflow Webserver | http://localhost:8080 | admin / admin |
+| MinIO Console | http://localhost:9001 | admin / admin123 |
+| PostgreSQL | localhost:5432 | admin / admin |
 
-http://localhost:8080
-
-user: admin
-
-password: admin
-
-MinIO (simula AWS S3)
-
-http://localhost:9001
-
-user: admin
-
-password: admin123
-
-Bucket creado automáticamente:
-sp500-bronze

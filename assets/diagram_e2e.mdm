@@ -1,0 +1,72 @@
+---
+config:
+  theme: neo-dark
+title: End-to-End Data Platform — S3 → Airflow → RDS → DBT → BI
+---
+flowchart LR
+
+    %% ===========================
+    %% INGESTION
+    %% ===========================
+    subgraph INGEST["Data Ingestion:::aws"]
+        API["External APIs / CSV Sources"]
+        S3_RAW["S3 Raw Zone"]
+    end
+
+    %% ===========================
+    %% ORCHESTRATION
+    %% ===========================
+    subgraph ORCH["Airflow Orchestration:::airflow"]
+        DAG_RAW["DAG Raw: Ingest → S3"]
+        DAG_BRONZE["DAG Bronze: S3 → RDS"]
+        DAG_SILVER["DAG Silver: SQL Transformations"]
+        DAG_GOLD["DAG Gold (WIP): Prepare for Analytics"]
+    end
+
+    %% ===========================
+    %% STORAGE / PROCESSING
+    %% ===========================
+    subgraph STORAGE["AWS RDS + Aurora:::aws"]
+        BRONZE_DB["Bronze (Raw SQL Tables)"]
+        SILVER_DB["Silver (Cleaned / Modeled Tables)"]
+        GOLD_DB["Gold (Aggregated, Ready for BI)"]
+    end
+
+    %% ===========================
+    %% DBT TRANSFORMATIONS
+    %% ===========================
+    subgraph DBT["DBT Modeling (WIP):::tools"]
+        STAGING["Staging Models (WIP)"]
+        INTERMEDIATE["Intermediate Models (WIP)"]
+        MARTS["Analytics Marts (WIP)"]
+    end
+
+    %% ===========================
+    %% BI LAYER
+    %% ===========================
+    subgraph BI["Analytics / Dashboard:::bi"]
+        DASHBOARD["Power BI / QuickSight / Metabase"]
+    end
+
+
+    %% ===========================
+    %% FLOWS
+    %% ===========================
+    API --> DAG_RAW --> S3_RAW
+    S3_RAW --> DAG_BRONZE --> BRONZE_DB
+    BRONZE_DB --> DAG_SILVER --> SILVER_DB
+    SILVER_DB --> DAG_GOLD --> GOLD_DB
+
+    %% DBT
+    SILVER_DB --> STAGING --> INTERMEDIATE --> MARTS --> GOLD_DB
+
+    %% BI
+    GOLD_DB --> DASHBOARD
+
+    %% ===========================
+    %% STYLES
+    %% ===========================
+    classDef aws fill:#1f2a36,stroke:#26a7de,stroke-width:2px
+    classDef airflow fill:#223657,stroke:#33c3ff,stroke-width:1.5px
+    classDef tools fill:#423d6d,stroke:#a78bfa,stroke-width:2px
+    classDef bi fill:#2b3a0a,stroke:#d4e157,stroke-width:2px

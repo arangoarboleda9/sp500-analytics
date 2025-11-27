@@ -59,7 +59,7 @@ resource "aws_instance" "etl_server" {
 
 resource "aws_eip" "etl_ip" {
   instance = aws_instance.etl_server.id
-  vpc      = true
+  domain   = "vpc"
 
   tags = {
     Name    = "sp500-etl-ip-${var.env}"

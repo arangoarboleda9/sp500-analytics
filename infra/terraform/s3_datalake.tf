@@ -1,7 +1,6 @@
 resource "aws_s3_bucket" "data_lake" {
-  # nombre EXACTO del bucket, sin -env
-  bucket = var.s3_bucket_name
-
+  bucket        = var.s3_bucket_name
+  force_destroy = false
   tags = {
     Project = "sp500-analytics"
     Env     = var.env

@@ -6,3 +6,5 @@ COPY requirements.txt /requirements.txt
 
 RUN pip install --user --upgrade pip && \
     pip install --user -r /requirements.txt
+
+CMD ["airflow", "standalone"]

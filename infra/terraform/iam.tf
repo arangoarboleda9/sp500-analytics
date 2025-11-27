@@ -1,5 +1,5 @@
 resource "aws_iam_role" "etl_role" {
-  name = "sp500-etl-role-${var.env}"
+  name = "sp500-etl-role-v3-${var.env}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -48,6 +48,6 @@ resource "aws_iam_role_policy_attachment" "etl_role_attach" {
 }
 
 resource "aws_iam_instance_profile" "etl_instance_profile" {
-  name = "sp500-etl-instance-profile-${var.env}"
+  name = "sp500-etl-instance-profile-${var.env}-v2"
   role = aws_iam_role.etl_role.name
 }

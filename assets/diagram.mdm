@@ -1,0 +1,44 @@
+---
+config:
+  theme: neo-dark
+  layout: dagre
+title: AWS Data Lake Pipeline — Raw → Bronze → Silver → Gold (WIP)
+---
+flowchart TB
+ subgraph S3["S3 Storage:::aws"]
+        RAW("Raw Zone (CSV Files)")
+        SILVER("Silver Zone<br>• Tablas transformadas<br>• Dimension Tables<br>(Aurora)")
+        GOLD("Gold Zone (Work in Progress)<br>• Métricas consolidadas<br>• Tablas listas para BI<br>• Future DBT Models")
+  end
+ subgraph AIRFLOW["Data Orchestration (Airflow):::airflow"]
+        DAG1("DAG 1: Ingest API → S3 (Raw)")
+        DAG2("DAG 2: Load Raw CSV → RDS (Bronze)")
+        DAG3("DAG 3: Transform Bronze → Silver (Aurora)")
+        DAG4("DAG 4 (WIP): Silver → Gold Transformations")
+  end
+ subgraph RDS["AWS RDS (PostgreSQL / Aurora):::aws"]
+        BRONZE("Bronze Tables (Raw SQL)")
+        AURORA("Aurora: Silver Transformations<br>• Limpieza<br>• Tablas normalizadas<br>• Facts &amp; Dimensions")
+        GOLD_DB("Aurora: Gold (WIP)<br>• Metric Tables<br>• Aggregated Models")
+  end
+    DAG1 --> RAW
+    RAW --> DAG2
+    DAG2 --> BRONZE
+    BRONZE --> DAG3
+    DAG3 --> SILVER
+    SILVER --> DAG4 & AURORA
+    DAG4 --> GOLD
+    GOLD --> GOLD_DB
+     RAW:::aws
+     SILVER:::aws
+     GOLD:::aws
+     DAG1:::airflow
+     DAG2:::airflow
+     DAG3:::airflow
+     DAG4:::airflow
+     BRONZE:::aws
+     AURORA:::aws
+     GOLD_DB:::aws
+    classDef aws fill:#1f2a36,stroke:#26a7de,stroke-width:2px
+    classDef airflow fill:#223657,stroke:#33c3ff,stroke-width:1.5px
+    classDef stage fill:#374151,stroke:#9CA3AF,stroke-width:1.5px

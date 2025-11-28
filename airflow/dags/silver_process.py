@@ -46,7 +46,6 @@ with DAG(
         "company_info_silver.py": "T1_INFO",
         "company_index_silver.py": "T2_INDEX",
         "company_stocks.py": "T3_STOCKS",
-        "historical_stocks_silver.py": "T4_HISTORICAL",
         "company_reviews_silver.py": "T5_REVIEWS",
         "company_riesgos_silver.py": "T6_RIESGOS",
     }

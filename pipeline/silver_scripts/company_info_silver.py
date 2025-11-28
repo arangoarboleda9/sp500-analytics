@@ -22,7 +22,6 @@ AWS_REGION = config.AWS_DEFAULT_REGION
 SILVER_BUCKET_NAME = config.S3_BUCKET
 S3_KEY_PATH = "silver/company_info/fact_company_info.parquet"
 
-# -----------------------------------------------------\
 # CONFIGURACIÓN DE RDS Y TABLAS
 # -----------------------------------------------------\
 DB_USER = config.AWS_DB_USER

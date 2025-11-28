@@ -4,6 +4,7 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from datetime import datetime, timedelta
 import os
 import importlib.util
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 
 
 SCRIPTS_DIR = "/opt/airflow/pipeline/bronze/scripts/ingest_rds"
@@ -63,3 +64,11 @@ with DAG(
             op_kwargs={"script_path": script_path},
         )
         script_tasks.append(task)
+
+trigger_silver = TriggerDagRunOperator(
+    task_id="trigger_silver_pipeline",
+    trigger_dag_id="silver_process",
+    wait_for_completion=False,
+)
+
+script_tasks >> trigger_silver

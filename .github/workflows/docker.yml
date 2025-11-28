@@ -65,7 +65,6 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ vars.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
       S3_BUCKET: ${{ vars.S3_BUCKET }}
-      # API_BASE_URL: ${{ vars.API_BASE_URL }}
 
     steps:
       - name: Checkout repo
@@ -80,30 +79,64 @@ jobs:
 
       - name: Deploy latest image on EC2
         run: |
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
-            # Carpeta base de la app en la EC2
+
+            # 1) Carpeta base
             sudo mkdir -p /opt/sp500
             cd /opt/sp500
 
-            # Asegurar que Docker esté arriba
+            # 2) Asegurar Docker
             if ! sudo systemctl is-active --quiet docker; then
               sudo systemctl start docker || true
             fi
 
-            # Pull de la última imagen
+            # 3) Red de Docker para que Airflow vea a Postgres por nombre
+            sudo docker network create airflow-net 2>/dev/null || true
+
+            # 4) Postgres para Airflow (si no existe, lo creo; si ya está, lo reutilizo)
+            if ! sudo docker ps -a --format '{{.Names}}' | grep -q '^airflow-postgres$'; then
+              sudo docker run -d \
+                --name airflow-postgres \
+                --network airflow-net \
+                -e POSTGRES_USER=airflow \
+                -e POSTGRES_PASSWORD=airflow \
+                -e POSTGRES_DB=airflow \
+                -v airflow_pgdata:/var/lib/postgresql/data \
+                -p 5432:5432 \
+                postgres:15
+            else
+              # Si existe pero está parado, lo levanto
+              if ! sudo docker ps --format '{{.Names}}' | grep -q '^airflow-postgres$'; then
+                sudo docker start airflow-postgres
+              fi
+            fi
+
+            # 5) Pull de la última imagen del ETL
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
-            # Detener y borrar contenedor anterior si existe
+            # 6) URL de conexión de Airflow a Postgres (DENTRO de la red de Docker)
+            export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow"
+
+            # 7) Migrar la DB de Airflow (idempotente: se puede correr en cada deploy)
+            sudo docker run --rm \
+              --network airflow-net \
+              -e AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="\$AIRFLOW__DATABASE__SQL_ALCHEMY_CONN" \
+              ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest \
+              airflow db migrate || true
+
+            # 8) Detener y borrar contenedor anterior
             if sudo docker ps -a --format '{{.Names}}' | grep -q '^sp500-etl$'; then
               sudo docker stop sp500-etl || true
               sudo docker rm sp500-etl || true
             fi
 
-
+            # 9) Levantar el nuevo contenedor de Airflow (webserver) usando la red y la DB correcta
             sudo docker run -d \
               --name sp500-etl \
+              --network airflow-net \
               -p 8080:8080 \
+              -e AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="\$AIRFLOW__DATABASE__SQL_ALCHEMY_CONN" \
               -e AWS_DB_USER=${AWS_DB_USER} \
               -e AWS_DB_PASSWORD=${AWS_DB_PASSWORD} \
               -e AWS_DB_HOST=${AWS_DB_HOST} \
@@ -114,5 +147,5 @@ jobs:
               -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
               -e S3_BUCKET=${S3_BUCKET} \
               -e ENVIRONMENT=prod \
-              ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+              ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest webserver
           EOF

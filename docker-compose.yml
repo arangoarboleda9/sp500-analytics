@@ -1,8 +1,6 @@
 version: '3.9'
 
 x-common-volumes: &airflow-vols
-  - ./airflow/dags:/opt/airflow/dags
-  - ./pipeline:/opt/airflow/pipeline
   - ./airflow/logs:/opt/airflow/logs
   - ./airflow/plugins:/opt/airflow/plugins
 

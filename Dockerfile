@@ -11,8 +11,9 @@ RUN chown airflow:0 /requirements.txt
 
 # Cambiar a usuario airflow para usar pip
 USER airflow
-RUN pip install --no-cache-dir --user -r /requirements.txt
-
+RUN pip install --user --upgrade pip && \
+    pip install --user -r /requirements.txt
+    
 # -----------------------------------
 # 3. Copiar pipeline + dags
 # -----------------------------------

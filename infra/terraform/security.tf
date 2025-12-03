@@ -9,7 +9,7 @@ resource "aws_security_group" "etl_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["${var.allowed_ip}/32"]
+    cidr_blocks = ["${var.allowed_ip}/0"]
   }
 
   # Airflow UI (opcional, puerto 8080)
@@ -18,7 +18,7 @@ resource "aws_security_group" "etl_sg" {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = ["${var.allowed_ip}/32"]
+    cidr_blocks = ["${var.allowed_ip}/0"]
   }
 
   # Salida a Internet

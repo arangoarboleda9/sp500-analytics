@@ -79,7 +79,7 @@ jobs:
 
       - name: Deploy latest image on EC2
         run: |
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
 
             # 1) Carpeta base
@@ -134,6 +134,7 @@ jobs:
 
             # 9) URL de conexión de Airflow a Postgres (dentro de la red airflow-net)
             AIRFLOW_DB_URI="postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow"
+            echo "Usando AIRFLOW_DB_URI=${AIRFLOW_DB_URI}"
 
             # 10) Migrar / inicializar la DB de Airflow (idempotente)
             sudo docker run --rm \
@@ -148,7 +149,7 @@ jobs:
               --network airflow-net \
               -p 8080:8080 \
               --log-driver awslogs \
-              --log-opt awslogs-region=${{ env.AWS_DEFAULT_REGION }} \
+              --log-opt awslogs-region=${AWS_DEFAULT_REGION} \
               --log-opt awslogs-group=/sp500/etl \
               --log-opt awslogs-stream=sp500-etl-webserver \
               -e AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="$AIRFLOW_DB_URI" \

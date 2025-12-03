@@ -53,18 +53,18 @@ Esta sección describe la infraestructura en entorno cloud.
 
 ### Servicios
 
-- Amazon S3  
-  - Zona Bronze: sp500-datatsets  
-  - Zona Silver 
+- Amazon S3
+  - Zona Bronze: sp500-datatsets
+  - Zona Silver
   - Zona Gold
 
-- Airflow en EC2/ECS  
+- Airflow en EC2/ECS
   Para orquestar las tareas del pipeline.
 
-- Amazon RDS PostgreSQL  
+- Amazon RDS PostgreSQL
   Para la capa silver, analítica y consumo final.
 
-- IAM  
+- IAM
   Roles, políticas y permisos para S3, Airflow, etc.
 
 ### Infraestructura como Código (Terraform) - WIP
@@ -91,15 +91,15 @@ sp500-analytics/
 ├── minio/
 │ └── data/
 ├── scripts/
-├── notebook/               
+├── notebook/
 ├── infra/ # config de servicios y docker
-├── pipeline/ 
+├── pipeline/
 │   ├── bronze/
 │   │       ├── scripts/
 │   │       ├── ...archivos requeridos para el proceso en esta capa
 │   ├── silver/
 │   └── gold/
-│   └── utils       
+│   └── utils
 ├── tests/
 ├── .gitignore
 ├── README.md
@@ -107,7 +107,7 @@ sp500-analytics/
 
 ```
 
-## Documentación ampliada 
+## Documentación ampliada
 - [`Documento técnico`](docs/04_tech.md)
 
 ## Requisitos
@@ -117,6 +117,35 @@ sp500-analytics/
 - DBT
 - AWS CLI (si se usa S3 real)
 - Kaggle API configurada
+
+## Desarrollo
+
+### Pre-commit hooks
+
+Este proyecto utiliza pre-commit para mantener la calidad del código. Los hooks se ejecutarán automáticamente antes de cada commit.
+
+**Instalación:**
+```bash
+pip install -r requirements-dev.txt
+pre-commit install
+```
+
+O solo pre-commit:
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+**Herramientas configuradas:**
+- `flake8`: Linting de código Python
+- `isort`: Ordenamiento automático de imports
+- `black`: Formateo automático de código
+- `bandit`: Detección de problemas de seguridad
+- Varias verificaciones adicionales (YAML, JSON, trailing whitespace, etc.)
+
+Para más detalles, ver [.pre-commit-setup.md](.pre-commit-setup.md)
+
+**Nota:** Pre-commit está configurado para escanear solo los próximos commits, no modificará archivos existentes en el repositorio.
 
 ## Instalación y uso (versión local de desarrollo)
 
@@ -141,4 +170,3 @@ Servicios disponibles:
 | Airflow Webserver | http://localhost:8080 | admin / admin |
 | MinIO Console | http://localhost:9001 | admin / admin123 |
 | PostgreSQL | localhost:5432 | admin / admin |
-

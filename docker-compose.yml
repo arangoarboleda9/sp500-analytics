@@ -65,6 +65,12 @@ services:
       --firstname admin --lastname admin --email admin@example.com"
     env_file:
       - .env
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_DEFAULT_REGION}
+        awslogs-group: /sp500/etl
+        awslogs-stream-prefix: airflow-init
 
   airflow-webserver:
     image: airflow:custom_lu
@@ -82,6 +88,12 @@ services:
     command: webserver
     env_file:
       - .env
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_DEFAULT_REGION}
+        awslogs-group: /sp500/etl
+        awslogs-stream-prefix: airflow-webserver
 
   airflow-scheduler:
     image: airflow:custom_lu
@@ -94,6 +106,12 @@ services:
     command: scheduler
     env_file:
       - .env
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_DEFAULT_REGION}
+        awslogs-group: /sp500/etl
+        awslogs-stream-prefix: airflow-scheduler
 
   airflow-worker:
     image: airflow:custom_lu
@@ -106,6 +124,12 @@ services:
     command: celery worker
     env_file:
       - .env
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_DEFAULT_REGION}
+        awslogs-group: /sp500/etl
+        awslogs-stream-prefix: airflow-worker
 
   airflow-triggerer:
     image: airflow:custom_lu
@@ -118,6 +142,12 @@ services:
     command: triggerer
     env_file:
       - .env
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_DEFAULT_REGION}
+        awslogs-group: /sp500/etl
+        awslogs-stream-prefix: airflow-triggerer
 
 volumes:
   postgres_data:

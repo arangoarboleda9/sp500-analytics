@@ -51,3 +51,25 @@ resource "aws_iam_instance_profile" "etl_instance_profile" {
   name = "sp500-etl-instance-profile-${var.env}-v2"
   role = aws_iam_role.etl_role.name
 }
+
+# ---------- CLOUDWATCH LOGS ----------
+
+data "aws_iam_policy_document" "cloudwatch_logs" {
+  statement {
+    actions = [
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "logs:DescribeLogStreams"
+    ]
+
+    resources = [
+      "${aws_cloudwatch_log_group.etl_logs.arn}:*"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "etl_cloudwatch_logs" {
+  name   = "sp500-etl-cloudwatch-logs-${var.env}"
+  role   = aws_iam_role.etl_role.id
+  policy = data.aws_iam_policy_document.cloudwatch_logs.json
+}

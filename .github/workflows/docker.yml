@@ -111,31 +111,47 @@ jobs:
               fi
             fi
 
-            # 5) Pull de la última imagen del ETL
-            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-
-            # 6) URL de conexión de Airflow a Postgres (dentro de la red airflow-net)
-            AIRFLOW_DB_URI="postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow"
-
-            # 7) Migrar / inicializar la DB de Airflow (idempotente)
-            sudo docker run --rm \
-              --network airflow-net \
-              -e AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="\$AIRFLOW_DB_URI" \
-              ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest \
-              airflow db migrate || true
-
-            # 8) Detener y borrar contenedor anterior si existe
+            # 5) Detener y borrar contenedor anterior si existe
             if sudo docker ps -a --format '{{.Names}}' | grep -q '^sp500-etl$'; then
+              echo "Encontrado contenedor anterior sp500-etl, deteniendo y eliminando..."
               sudo docker stop sp500-etl || true
               sudo docker rm sp500-etl || true
             fi
 
-            # 9) Levantar Airflow webserver con la DB correcta y las variables del proyecto
+            # 6) Borrar imagen anterior para liberar espacio (si existe)
+            if sudo docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest$'; then
+              echo "Eliminando imagen anterior ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest para liberar espacio..."
+              sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest || true
+            fi
+
+            # 7) Limpiar imágenes y contenedores no usados (sin tocar volúmenes de datos)
+            sudo docker container prune -f || true
+            sudo docker image prune -f || true
+
+            # 8) Pull de la última imagen del ETL
+            echo "Haciendo pull de la nueva imagen..."
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+
+            # 9) URL de conexión de Airflow a Postgres (dentro de la red airflow-net)
+            AIRFLOW_DB_URI="postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow"
+
+            # 10) Migrar / inicializar la DB de Airflow (idempotente)
+            sudo docker run --rm \
+              --network airflow-net \
+              -e AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="$AIRFLOW_DB_URI" \
+              ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest \
+              airflow db migrate || true
+
+            # 11) Levantar Airflow webserver con CloudWatch Logs y la DB correcta
             sudo docker run -d \
               --name sp500-etl \
               --network airflow-net \
               -p 8080:8080 \
-              -e AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="\$AIRFLOW_DB_URI" \
+              --log-driver awslogs \
+              --log-opt awslogs-region=${{ env.AWS_DEFAULT_REGION }} \
+              --log-opt awslogs-group=/sp500/etl \
+              --log-opt awslogs-stream=sp500-etl-webserver \
+              -e AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="$AIRFLOW_DB_URI" \
               -e AWS_DB_USER=${AWS_DB_USER} \
               -e AWS_DB_PASSWORD=${AWS_DB_PASSWORD} \
               -e AWS_DB_HOST=${AWS_DB_HOST} \

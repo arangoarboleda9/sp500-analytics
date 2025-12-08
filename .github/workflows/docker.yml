@@ -1,6 +1,5 @@
 name: Docker CI/CD
 
-
 on:
   push:
     branches:
@@ -94,23 +93,23 @@ jobs:
             # 3) Red de Docker para que Airflow vea a Postgres por nombre
             sudo docker network create airflow-net 2>/dev/null || true
 
-            # 4) Postgres para Airflow (si no existe, lo creo; si ya está, lo reutilizo)
-            if ! sudo docker ps -a --format '{{.Names}}' | grep -q '^airflow-postgres$'; then
-              sudo docker run -d \
-                --name airflow-postgres \
-                --network airflow-net \
-                --restart unless-stopped \
-                -e POSTGRES_USER=airflow \
-                -e POSTGRES_PASSWORD=airflow \
-                -e POSTGRES_DB=airflow \
-                -v airflow_pgdata:/var/lib/postgresql/data \
-                -p 5432:5432 \
-                postgres:15
-            else
-              if ! sudo docker ps --format '{{.Names}}' | grep -q '^airflow-postgres$'; then
-                sudo docker start airflow-postgres
-              fi
+            # 4) Postgres para Airflow: SIEMPRE recrear, con restart policy
+            if sudo docker ps -a --format '{{.Names}}' | grep -q '^airflow-postgres$'; then
+              echo "Recreando contenedor airflow-postgres..."
+              sudo docker stop airflow-postgres || true
+              sudo docker rm airflow-postgres || true
             fi
+
+            sudo docker run -d \
+              --name airflow-postgres \
+              --network airflow-net \
+              --restart unless-stopped \
+              -e POSTGRES_USER=airflow \
+              -e POSTGRES_PASSWORD=airflow \
+              -e POSTGRES_DB=airflow \
+              -v airflow_pgdata:/var/lib/postgresql/data \
+              -p 5432:5432 \
+              postgres:15
 
             # 5) Detener y borrar contenedor anterior si existe
             if sudo docker ps -a --format '{{.Names}}' | grep -q '^sp500-etl$'; then
@@ -145,25 +144,25 @@ jobs:
               airflow db migrate || true
 
             # 11) Levantar Airflow webserver con CloudWatch Logs y la DB correcta
-              sudo docker run -d \
-                --name sp500-etl \
-                --network airflow-net \
-                --restart unless-stopped \
-                -p 8080:8080 \
-                --log-driver awslogs \
-                --log-opt awslogs-region=${AWS_DEFAULT_REGION} \
-                --log-opt awslogs-group=/sp500/etl \
-                --log-opt awslogs-stream=sp500-etl-webserver \
-                -e AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="$AIRFLOW_DB_URI" \
-                -e AWS_DB_USER=${AWS_DB_USER} \
-                -e AWS_DB_PASSWORD=${AWS_DB_PASSWORD} \
-                -e AWS_DB_HOST=${AWS_DB_HOST} \
-                -e AWS_DB_PORT=${AWS_DB_PORT} \
-                -e AWS_DB_NAME=${AWS_DB_NAME} \
-                -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
-                -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
-                -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-                -e S3_BUCKET=${S3_BUCKET} \
-                -e ENVIRONMENT=prod \
-                ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest webserver
+            sudo docker run -d \
+              --name sp500-etl \
+              --network airflow-net \
+              --restart unless-stopped \
+              -p 8080:8080 \
+              --log-driver awslogs \
+              --log-opt awslogs-region=${AWS_DEFAULT_REGION} \
+              --log-opt awslogs-group=/sp500/etl \
+              --log-opt awslogs-stream=sp500-etl-webserver \
+              -e AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="$AIRFLOW_DB_URI" \
+              -e AWS_DB_USER=${AWS_DB_USER} \
+              -e AWS_DB_PASSWORD=${AWS_DB_PASSWORD} \
+              -e AWS_DB_HOST=${AWS_DB_HOST} \
+              -e AWS_DB_PORT=${AWS_DB_PORT} \
+              -e AWS_DB_NAME=${AWS_DB_NAME} \
+              -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+              -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+              -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
+              -e S3_BUCKET=${S3_BUCKET} \
+              -e ENVIRONMENT=prod \
+              ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest webserver
           EOF

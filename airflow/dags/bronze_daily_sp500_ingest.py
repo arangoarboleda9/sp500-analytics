@@ -1,6 +1,7 @@
 """Airflow DAG to ingest daily SP500 and SPY raw data into S3 Bronze."""
 
 from datetime import datetime, timedelta
+from uuid import uuid4
 
 from airflow.api.common.experimental.trigger_dag import trigger_dag
 from airflow.operators.python import PythonOperator
@@ -41,9 +42,9 @@ with DAG(
     "bronze_daily_sp500_ingest",
     default_args=default_args,
     description="DAG para descargar y cargar archivos RAW (SP500, SPY) a S3",
-    schedule_interval="0 15 * * *",
-    start_date=datetime(2025, 12, 3),
-    catchup=False,
+    schedule_interval="12 7 * * *",  # Esto es 5:56 AM UTC
+    start_date=datetime(2025, 12, 6),
+    catchup=True,
     tags=["bronze", "raw", "s3"],
 ) as dag:
     load_sp500_task = PythonOperator(
@@ -61,12 +62,18 @@ with DAG(
     )
 
     def trigger_silver_dag(**context):
-        trigger_dag(dag_id="silver_daily_sp500_process", run_id=f"bronze_trigger__{context['ds']}", conf={})
+        """Trigger silver dag action"""
+        trigger_dag(
+            dag_id="silver_daily_sp500_process",
+            run_id=f"bronze_trigger__{context['ds']}_{str(uuid4())}",
+            conf={},
+        )
 
     trigger_silver = PythonOperator(
         task_id="trigger_silver",
         python_callable=trigger_silver_dag,
-        provide_context=True
+        provide_context=True,
+        dag=dag,
     )
 
     load_sp500_task >> load_spy_task >> trigger_silver

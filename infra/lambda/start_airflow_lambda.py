@@ -1,14 +1,31 @@
 import os
+import time
 import boto3
 
 ec2 = boto3.client("ec2")
+ssm = boto3.client("ssm")
 
 INSTANCE_ID = os.environ["INSTANCE_ID"]
 AIRFLOW_URL = os.environ["AIRFLOW_URL"]  # ej: http://X.X.X.X:8080
 
+# Parámetro donde guardamos el timestamp del último acceso
+LAST_ACCESS_PARAM = os.environ.get(
+    "LAST_ACCESS_PARAM",
+    "/sp500/airflow/last_access"
+)
+
 
 def lambda_handler(event, context):
-    # Obtener estado actual de la instancia
+    # 1) Registrar último acceso (epoch en segundos)
+    now = int(time.time())
+    ssm.put_parameter(
+        Name=LAST_ACCESS_PARAM,
+        Value=str(now),
+        Type="String",
+        Overwrite=True,
+    )
+
+    # 2) Obtener estado actual de la instancia
     response = ec2.describe_instances(InstanceIds=[INSTANCE_ID])
     state = response["Reservations"][0]["Instances"][0]["State"]["Name"]
 
@@ -33,7 +50,7 @@ def lambda_handler(event, context):
             "body": body,
         }
 
-    # Si ya está corriendo → redirect 302 a la URL real de Airflow
+    # 3) Si ya está corriendo → redirect 302 a la URL real de Airflow
     return {
         "statusCode": 302,
         "headers": {"Location": AIRFLOW_URL},

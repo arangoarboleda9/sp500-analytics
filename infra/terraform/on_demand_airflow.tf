@@ -1,16 +1,22 @@
 ########################################
-# ZIP de la Lambda
+# ZIPs de las Lambdas
 ########################################
 
 data "archive_file" "start_airflow_zip" {
-  type = "zip"
-  # 👇 El .py está en ../lambda relativo a este módulo terraform
+  type        = "zip"
+  # El .py está en ../lambda relativo a este módulo terraform
   source_file = "${path.module}/../lambda/start_airflow_lambda.py"
   output_path = "${path.module}/../lambda/start_airflow_lambda.zip"
 }
 
+data "archive_file" "stop_airflow_zip" {
+  type        = "zip"
+  source_file = "${path.module}/../lambda/stop_airflow_if_idle.py"
+  output_path = "${path.module}/../lambda/stop_airflow_if_idle.zip"
+}
+
 ########################################
-# IAM Role + Policy para la Lambda
+# IAM Role + Policy para las Lambdas
 ########################################
 
 resource "aws_iam_role" "start_airflow_lambda_role" {
@@ -37,12 +43,13 @@ resource "aws_iam_role_policy" "start_airflow_lambda_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      # Permisos para manejar la instancia EC2
+      # EC2: prender, apagar y consultar estado
       {
         Effect = "Allow"
         Action = [
           "ec2:DescribeInstances",
-          "ec2:StartInstances"
+          "ec2:StartInstances",
+          "ec2:StopInstances"
         ]
         Resource = "*"
       },
@@ -53,6 +60,15 @@ resource "aws_iam_role_policy" "start_airflow_lambda_policy" {
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
+        ]
+        Resource = "*"
+      },
+      # SSM Parameter Store: guardar y leer último acceso
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:PutParameter",
+          "ssm:GetParameter"
         ]
         Resource = "*"
       }
@@ -75,8 +91,9 @@ resource "aws_lambda_function" "start_airflow" {
 
   environment {
     variables = {
-      INSTANCE_ID = aws_instance.etl_server.id
-      AIRFLOW_URL = "http://${aws_eip.etl_ip.public_ip}:8080"
+      INSTANCE_ID       = aws_instance.etl_server.id
+      AIRFLOW_URL       = "http://${aws_eip.etl_ip.public_ip}:8080"
+      LAST_ACCESS_PARAM = "/sp500/airflow/last_access"
     }
   }
 
@@ -84,7 +101,31 @@ resource "aws_lambda_function" "start_airflow" {
 }
 
 ########################################
-# API Gateway HTTP API
+# Lambda que apaga la EC2 si está ociosa
+########################################
+
+resource "aws_lambda_function" "stop_airflow_if_idle" {
+  function_name = "stop-airflow-if-idle-${var.env}"
+  role          = aws_iam_role.start_airflow_lambda_role.arn
+  handler       = "stop_airflow_if_idle.lambda_handler"
+  runtime       = "python3.12"
+
+  filename         = data.archive_file.stop_airflow_zip.output_path
+  source_code_hash = data.archive_file.stop_airflow_zip.output_base64sha256
+
+  environment {
+    variables = {
+      INSTANCE_ID       = aws_instance.etl_server.id
+      LAST_ACCESS_PARAM = "/sp500/airflow/last_access"
+      IDLE_SECONDS      = "120" # 2 min minutos; podés bajarlo a 120 para probar
+    }
+  }
+
+  timeout = 15
+}
+
+########################################
+# API Gateway HTTP API (entrada on-demand)
 ########################################
 
 resource "aws_apigatewayv2_api" "airflow_on_demand_api" {
@@ -114,7 +155,7 @@ resource "aws_apigatewayv2_stage" "airflow_on_demand_stage" {
 }
 
 ########################################
-# Permiso para que API Gateway invoque la Lambda
+# Permiso para que API Gateway invoque la Lambda de start
 ########################################
 
 resource "aws_lambda_permission" "allow_apigw_to_invoke" {
@@ -124,6 +165,29 @@ resource "aws_lambda_permission" "allow_apigw_to_invoke" {
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${aws_apigatewayv2_api.airflow_on_demand_api.execution_arn}/*/*"
+}
+
+########################################
+# EventBridge: schedule para auto-stop
+########################################
+
+resource "aws_cloudwatch_event_rule" "stop_airflow_schedule" {
+  name                = "stop-airflow-if-idle-${var.env}"
+  schedule_expression = "rate(2 minutes)" # podés cambiar a 5 o 10 en prod
+}
+
+resource "aws_cloudwatch_event_target" "stop_airflow_target" {
+  rule      = aws_cloudwatch_event_rule.stop_airflow_schedule.name
+  target_id = "stop-airflow-lambda"
+  arn       = aws_lambda_function.stop_airflow_if_idle.arn
+}
+
+resource "aws_lambda_permission" "allow_events_to_invoke_stop" {
+  statement_id  = "AllowEventBridgeInvokeStop"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.stop_airflow_if_idle.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.stop_airflow_schedule.arn
 }
 
 ########################################

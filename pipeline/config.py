@@ -50,3 +50,6 @@ class Config:
     S3_BRONZE_PREFIX_SP500 = "top_10_sp500_raw"
     S3_SILVER_PREFIX_SP500 = "top_10_sp500_silver"
     S3_SILVER_PREFIX_SPY = "spy_holdings_silver"
+
+    S3_GOLD_DIR_PREFIX = "gold"
+    S3_GOLD_PREFIX_SP500_DAILY_PRICES = "sp500_daily_prices"

@@ -149,5 +149,17 @@ services:
         awslogs-group: /sp500/etl
         awslogs-stream-prefix: airflow-triggerer
 
+  streamlit:
+      build:
+        context: ./dashboard/streamlit_app
+        dockerfile: Dockerfile
+      container_name: streamlit_app
+      ports:
+        - "8501:8501"
+      volumes:
+        - ./streamlit_app:/app
+        - ./pipeline:/app/pipeline
+      env_file:
+      - .env
 volumes:
   postgres_data:

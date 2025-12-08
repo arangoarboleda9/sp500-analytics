@@ -69,7 +69,83 @@ Esta sección describe la infraestructura en entorno cloud.
 
 ### Infraestructura como Código (Terraform) - WIP
 
+- Implementación de infraestructura (DevOps / IaC)
 
+- Toda la infraestructura cloud del proyecto fue desplegada utilizando Terraform, siguiendo el principio de Infraestructura como Código, garantizando reproducibilidad, trazabilidad y versionamiento controlado dentro del repositorio.
+
+Arquitectura provisionada mediante Terraform
+
+- Los siguientes recursos se crean automáticamente:
+
+ - 1. - Amazon S3 – Data Lake (raw, silver, gold)
+
+      - Bucket único con carpetas por capas
+
+      - Versioning activado
+
+      - Encriptación SSE-AES256
+
+      - Bloqueo total de acceso público
+
+
+- 2. - EC2 para Airflow
+
+     - Instancia optimizada dentro del Free Tier
+
+     - Security Group restringido (solo 22 y 8080)
+
+     - Elastic IP asociada automáticamente
+
+     - User data para inicializar Docker
+
+- 3. - IAM Roles y Permisos
+
+     - Rol para EC2 con permisos mínimos (principio de mínimos privilegios)
+
+     - Políticas S3 estrictas: GetObject, PutObject, ListBucket
+
+     - Sin credenciales hardcodeadas
+
+- 4. - VPC y red
+
+     - Subred pública
+
+     - Internet Gateway
+
+     - Route table y asociaciones
+
+     - Seguridad aplicada por capa
+
+- Estructura del proyecto Terraform
+infra/
+└── terraform/
+    ├── main.tf
+    ├── provider.tf
+    ├── variables.tf
+    ├── outputs.tf
+    ├── network.tf
+    ├── compute.tf
+    ├── s3_datalake.tf
+    ├── iam.tf
+
+ - Comandos para desplegar la infraestructura
+     - terraform init
+     - terraform fmt
+     - terraform validate
+     - terraform plan
+     - terraform apply
+
+Buenas prácticas aplicadas
+
+Infraestructura modular y escalable
+
+Repositorio organizado e íntegramente versionado
+
+Uso responsable del Free Tier
+
+Seguridad aplicada en todas las capas
+
+Arquitectura reproducible en cualquier entorno
 
 ## Estructura general del proyecto
 ```

@@ -1,7 +1,10 @@
 """Airflow DAG for processing daily SP500 data into Silver layer."""
+
 from datetime import datetime, timedelta
+from uuid import uuid4
 
 import boto3
+from airflow.api.common.experimental.trigger_dag import trigger_dag
 from airflow.operators.python import PythonOperator
 from airflow.sensors.python import PythonSensor
 from config import Config
@@ -94,5 +97,21 @@ with DAG(
         provide_context=True,
     )
 
+    def trigger_gold_dag(**context):
+        """Trigger gold dag action"""
+        trigger_dag(
+            dag_id="gold_daily_sp500_process",
+            run_id=f"gold_daily_sp500_process__{context['ds']}_{str(uuid4())}",
+            conf={"triggered_by": "silver_daily_sp500_process"},
+        )
+
+    trigger_gold = PythonOperator(
+        task_id="trigger_gold",
+        python_callable=trigger_gold_dag,
+        provide_context=True,
+        dag=dag,
+    )
+
     wait_sp500 >> sp500_silver
     wait_spy >> spy_silver
+    [sp500_silver, spy_silver] >> trigger_gold
